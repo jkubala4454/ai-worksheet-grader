@@ -1,0 +1,30 @@
+# Ignore scanned PDFs and student data
+*.pdf
+incoming/
+redacted/
+student_data/
+mapping.csv
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Ignore Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore virtual environments
+venv/
+.env/
+.envrc
+
+# Ignore Streamlit config and history
+.streamlit/
+.history/
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
