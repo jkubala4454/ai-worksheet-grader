@@ -8,6 +8,9 @@ import pandas as pd
 import numpy as np
 from streamlit_drawable_canvas import st_canvas
 
+# 🔹 Import modular name detection function
+from redaction.detect_name_region import detect_name_region
+
 # Setup
 pdf_folder = os.path.expanduser('~/student_pdfs')
 review_log = 'review_log.txt'
@@ -61,8 +64,6 @@ if st.session_state.index < len(pdf_files):
             key="canvas",
         )
 
-
-
         if canvas_result.json_data and len(canvas_result.json_data["objects"]) > 0:
             obj = canvas_result.json_data["objects"][0]
             left = int(obj["left"])
@@ -77,23 +78,9 @@ if st.session_state.index < len(pdf_files):
             st.info("Draw a rectangle around the student's name to begin.")
             st.stop()
 
-    # Crop selected region
+    # 🔹 Use modular function to detect name
     region = st.session_state.region
-    name_crop = image.crop(region)
-
-    # Preprocess
-    gray = name_crop.convert('L')
-    bw = gray.point(lambda x: 0 if x < 180 else 255, '1')
-
-    # OCR with confidence
-    ocr_data = pytesseract.image_to_data(bw, output_type=pytesseract.Output.DATAFRAME)
-    ocr_data = ocr_data[ocr_data.conf != -1]
-    text = " ".join(ocr_data['text'].dropna().tolist())
-    avg_conf = round(ocr_data['conf'].mean(), 1) if not ocr_data.empty else 0
-
-    # Suggested name
-    match = re.search(r'Name[:\s\-]*([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})', text)
-    suggested_name = match.group(1).strip().replace(' ', '_') if match else ''
+    suggested_name, text, avg_conf = detect_name_region(pdf_path, region)
 
     # Final name logic
     fallback_name = f"UNSURE_{os.path.splitext(current_file)[0]}.pdf"
@@ -102,6 +89,7 @@ if st.session_state.index < len(pdf_files):
     st.session_state.final_name = final_name
 
     # Display
+    name_crop = image.crop(region)
     st.caption(f"Reviewing file {st.session_state.index + 1} of {len(pdf_files)}")
     st.subheader(f"Reviewing: {current_file}")
     st.image(name_crop, caption="📍 Selected Name Region", use_container_width=True)
@@ -148,6 +136,5 @@ if st.session_state.index < len(pdf_files):
 
 else:
     st.success("🎉 All files reviewed!")
-    # Reset region for next batch
     st.session_state.region = None
     st.session_state.region_set = False
